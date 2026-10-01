@@ -1,0 +1,30 @@
+CASE cos_identical 0x3fefffffffffffff
+CASE cos_orthogonal 0x3fc1ec70124e98f9
+CASE cos_zero 0x0
+CASE predict  0x3ff1ae147ae147ae  0x4001ae147ae147ae  0x400a851eb851eb85  0x4011ae147ae147ae  0x401619999999999a  0x401a851eb851eb85  0x401ef0a3d70a3d71  0x4021ae147ae147ae
+CASE vibe3_pos  0x4008000000000000  0x0  0x0  0x0  0x0  0x0  0x0  0x0
+CASE vibe3_vel  0x3ff0000000000000  0x0  0x0  0x0  0x0  0x0  0x0  0x0
+CASE vibe3_acc  0x0  0x0  0x0  0x0  0x0  0x0  0x0  0x0
+CASE vibe3_strength 0x4008000000000000
+CASE tick1_err 0x3ff0000000000000
+CASE tick1_surprise True
+CASE merge3_merged 2
+CASE merge3_count 1
+CASE merge3_strength 0x4008000000000000
+CASE decay_prune_pruned 1
+CASE decay_prune_count 2
+CASE decay_prune_s 0 0x3feccccccccccccd
+CASE decay_prune_s 1 0x3fdccccccccccccd
+CASE gc5_merged 7
+CASE gc5_decayed 3
+CASE gc5_pruned 0
+CASE gc5_balance True
+CASE gc5_count 1
+CASE gc5_s0 0x4010000000000000
+CASE murmur  0x3fe0000000000000  0x0  0x0  0x0  0x0  0x0  0x0  0x0
+CASE graph_pos0 0x3ff0000000000000
+CASE graph_pos1 0x3fe0000000000000
+CASE graph_pos2 0x0
+CASE empty_strength 0x0
+CASE empty_pos0 0x0
+DEMO OK — grand-pattern-mojo end-to-end receipt

@@ -1,100 +1,107 @@
 # Grand Pattern Fibonacci Dual-Direction Architecture
 # Core type definitions
+#
+# Ported to Mojo 1.2.0-dev (2026-10-01 nightly). Mechanical drift only:
+#   - `fn` -> `def`; `let` -> `var`; `inout self` ctor -> `out self`;
+#     mutating methods -> `mut self`
+#   - `@value` removed -> `struct X(ImplicitlyCopyable)`
+#   - file-scope `alias` removed (parse error) -> inline `SIMD[DType.float64, 8]`
+#   - `from math import sqrt` -> `from std import math` (call as `math.sqrt`)
+#   - `DynamicVector` -> builtin `List` (module 'collections' no longer exists)
+# Originals verbatim at git edcb28b.
 
-from math import sqrt
-
-alias EMBED_DIM = 8
-alias DType = Float64
+from std import sys
+from std import math
 
 
-@value
-struct Embedding:
-    var data: SIMD[DType, EMBED_DIM]
+struct Embedding(ImplicitlyCopyable):
+    var data: SIMD[DType.float64, 8]
 
-    fn __init__(inout self):
-        self.data = SIMD[DType, EMBED_DIM](0.0)
+    def __init__(out self):
+        self.data = SIMD[DType.float64, 8](0.0)
 
-    fn __init__(inout self, values: SIMD[DType, EMBED_DIM]):
+    def __init__(out self, values: SIMD[DType.float64, 8]):
         self.data = values
 
-    fn norm(self) -> DType:
-        return sqrt((self.data * self.data).reduce_add())
+    def norm(self) -> Float64:
+        return math.sqrt((self.data * self.data).reduce_add())
 
-    fn __add__(self, other: Embedding) -> Embedding:
+    def __add__(self, other: Embedding) -> Embedding:
         return Embedding(self.data + other.data)
 
-    fn __sub__(self, other: Embedding) -> Embedding:
+    def __sub__(self, other: Embedding) -> Embedding:
         return Embedding(self.data - other.data)
 
-    fn __mul__(self, scalar: DType) -> Embedding:
+    def __mul__(self, scalar: Float64) -> Embedding:
         return Embedding(self.data * scalar)
 
-    fn zero() -> Embedding:
+    def zero() -> Embedding:
         return Embedding()
 
 
-@value
-struct Tick:
-    var timestamp: DType
+struct Tick(ImplicitlyCopyable):
+    var timestamp: Float64
     var sensor_id: Int
     var emb: Embedding
-    var strength: DType
+    var strength: Float64
 
-    fn __init__(inout self):
+    def __init__(out self):
         self.timestamp = 0.0
         self.sensor_id = 0
         self.emb = Embedding()
         self.strength = 1.0
 
-    fn __init__(inout self, ts: DType, sid: Int, emb: Embedding, str: DType = 1.0):
+    def __init__(out self, ts: Float64, sid: Int, emb: Embedding, strength: Float64 = 1.0):
         self.timestamp = ts
         self.sensor_id = sid
         self.emb = emb
-        self.strength = str
+        self.strength = strength
 
 
-@value
-struct Vibe:
+struct Vibe(ImplicitlyCopyable):
     var position: Embedding
     var velocity: Embedding
     var acceleration: Embedding
-    var strength: DType
+    var strength: Float64
 
-    fn __init__(inout self):
+    def __init__(out self):
         self.position = Embedding()
         self.velocity = Embedding()
         self.acceleration = Embedding()
         self.strength = 1.0
 
 
-@value
-struct GCReport:
+struct GCReport(ImplicitlyCopyable):
     var merged: Int
     var decayed: Int
     var pruned: Int
 
-    fn __init__(inout self):
+    def __init__(out self):
         self.merged = 0
         self.decayed = 0
         self.pruned = 0
 
 
+# NOTE: TickDB, Room, CellularGraph are NOT ImplicitlyCopyable — they hold
+# List[...] fields, and List is not implicitly copyable (nor does explicit
+# __copyinit__ synthesis work on this nightly). Nothing in src/ or tests/
+# copies them by value; all mutation goes through `mut` references.
 struct TickDB:
-    var entries: DynamicVector[Tick]
+    var entries: List[Tick]
     var _count: Int
 
-    fn __init__(inout self):
-        self.entries = DynamicVector[Tick]()
+    def __init__(out self):
+        self.entries = List[Tick]()
         self._count = 0
 
-    fn push(inout self, entry: Tick):
-        self.entries.push_back(entry)
+    def push(mut self, entry: Tick):
+        self.entries.append(entry)
         self._count += 1
 
-    fn count(self) -> Int:
+    def count(self) -> Int:
         return self._count
 
-    fn last(self) -> Tick:
+    def last(self) -> Tick:
         if self._count > 0:
             return self.entries[self._count - 1]
         return Tick()
@@ -106,40 +113,39 @@ struct Room:
     var prediction_db: TickDB
     var vibe: Vibe
 
-    fn __init__(inout self, id: Int = 0):
+    def __init__(out self, id: Int = 0):
         self.id = id
         self.perception_db = TickDB()
         self.prediction_db = TickDB()
         self.vibe = Vibe()
 
 
-@value
-struct Edge:
+struct Edge(ImplicitlyCopyable):
     var from_id: Int
     var to_id: Int
-    var weight: DType
+    var weight: Float64
 
-    fn __init__(inout self, from_id: Int, to_id: Int, weight: DType = 1.0):
+    def __init__(out self, from_id: Int, to_id: Int, weight: Float64 = 1.0):
         self.from_id = from_id
         self.to_id = to_id
         self.weight = weight
 
 
 struct CellularGraph:
-    var rooms: DynamicVector[Room]
-    var edges: DynamicVector[Edge]
+    var rooms: List[Room]
+    var edges: List[Edge]
 
-    fn __init__(inout self):
-        self.rooms = DynamicVector[Room]()
-        self.edges = DynamicVector[Edge]()
+    def __init__(out self):
+        self.rooms = List[Room]()
+        self.edges = List[Edge]()
 
-    fn add_room(inout self, id: Int):
-        self.rooms.push_back(Room(id))
+    def add_room(mut self, id: Int):
+        self.rooms.append(Room(id))
 
-    fn add_edge(inout self, from_id: Int, to_id: Int, weight: DType = 1.0):
-        self.edges.push_back(Edge(from_id, to_id, weight))
+    def add_edge(mut self, from_id: Int, to_id: Int, weight: Float64 = 1.0):
+        self.edges.append(Edge(from_id, to_id, weight))
 
-    fn find_room(self, id: Int) -> Int:
+    def find_room(self, id: Int) -> Int:
         for i in range(len(self.rooms)):
             if self.rooms[i].id == id:
                 return i
